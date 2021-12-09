@@ -6,59 +6,62 @@ fn main() {
     println!("Solution: {}", run(path));
 }
 
-fn run(path: &Path) -> i32 {
-    let file = File::open(path).unwrap();    
+fn run(path: &Path) -> u32 {
+    println!("oxygen:");
+    let oxygen = find(path, find_most_used_value);
+    println!("oxygen = {}", oxygen);
+
+    println!("co2_scrubber:");
+    let co2_scrubber = find(path, find_least_used_value);
+
+    println!("co2_scrubber = {}", co2_scrubber);
+
+    return u32::try_from(oxygen * co2_scrubber).unwrap();
+}
+
+fn find(path: &Path, filter: fn(u32, u32) -> char) -> u32 {
+    let file = File::open(path).unwrap();
     let reader = BufReader::new(file);
-
-    let mut all_lines = reader.lines();
-
-    let mut bits = initialize(&mut all_lines);
-    let mut count = 1;
-
-    for line_res in all_lines {
-        let line = line_res.unwrap();
-        let mut char_count = 0;
-        for char in line.chars() {
-            let number = char.to_digit(10).unwrap();
-            bits[char_count] += number;
-            char_count += 1;
+    let mut remaining_lines = reader.lines().map(
+        | line | -> String {
+            line.unwrap()
         }
-        count += 1;
+    ).collect::<Vec<String>>();
+    for i in 0..12 {
+        let mut zeros = 0;
+        let mut ones = 0;
+        for line in &remaining_lines {
+            let number = line.chars().nth(i).unwrap().to_digit(2).unwrap();
+            match number {
+                0 => zeros += 1,
+                1 => ones += 1,
+                _ => panic!("digit not 0 or 1: {}", number)
+            }
+        }
+        let filter_for = filter(zeros, ones);
+        remaining_lines.retain(|line| line.chars().nth(i).unwrap() == filter_for);
+        println!("Iteration: {}. ones: {}, zeros: {}", i, ones, zeros);
+        if remaining_lines.len() == 1 {
+            return u32::from_str_radix(remaining_lines[0].as_str(), 2).unwrap();
+        }
     }
-
-    let (gamma, epsilon) = calculate_gamma_and_epsilon(bits, count);
-    return i32::try_from(gamma * epsilon).unwrap();
+    panic!("Iteraton return something other than 1 value. remaining_lines = \n {:?}", remaining_lines);
 }
 
-fn calculate_gamma_and_epsilon(bits: Vec<u32>, count: u32) -> (u32, u32) {
-    let mut gamma_as_string = "".to_string();
-    for ones in bits {
-        let zeros = count - ones;
-        if zeros < ones {
-            gamma_as_string.push_str("1");
-            continue;
-        }
-        if zeros > ones {
-            gamma_as_string.push_str("0");
-            continue;
-        }
-        panic!("Can't have as many ones as zeros. Ones: {}, Zeros: {}",ones, zeros);
+fn find_most_used_value(zeros: u32, ones: u32) -> char {
+    if zeros > ones {
+        return '0';
     }
-    let gamma = u32::from_str_radix(gamma_as_string.as_str(), 2).unwrap();
-    let base: u32 = 2;
-    let max: u32 = base.checked_pow(u32::try_from(gamma_as_string.len()).unwrap()).unwrap() - 1;
-    let epsilon = max - gamma;
-    (gamma, epsilon)
+
+    return '1';
 }
 
-fn initialize(all_lines: &mut std::io::Lines<BufReader<File>>) -> Vec<u32> {
-    let first_line = all_lines.next().unwrap().unwrap();
-    let mut bits: Vec<u32> = Vec::new();
-    for char in first_line.chars() {
-        let number = char.to_digit(10).unwrap();
-        bits.push(number);
+fn find_least_used_value(zeros: u32, ones: u32) -> char {
+    if ones < zeros {
+        return '1';
     }
-    bits
+
+    return '0';
 }
 
 #[cfg(test)]
