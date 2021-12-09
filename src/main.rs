@@ -26,6 +26,11 @@ fn run(path: &Path) -> i32 {
         count += 1;
     }
 
+    let (gamma, epsilon) = calculate_gamma_and_epsilon(bits, count);
+    return i32::try_from(gamma * epsilon).unwrap();
+}
+
+fn calculate_gamma_and_epsilon(bits: Vec<u32>, count: u32) -> (u32, u32) {
     let mut gamma_as_string = "".to_string();
     for ones in bits {
         let zeros = count - ones;
@@ -39,13 +44,11 @@ fn run(path: &Path) -> i32 {
         }
         panic!("Can't have as many ones as zeros. Ones: {}, Zeros: {}",ones, zeros);
     }
-    
     let gamma = u32::from_str_radix(gamma_as_string.as_str(), 2).unwrap();
-
     let base: u32 = 2;
     let max: u32 = base.checked_pow(u32::try_from(gamma_as_string.len()).unwrap()).unwrap() - 1;
     let epsilon = max - gamma;
-    return i32::try_from(gamma * epsilon).unwrap();
+    (gamma, epsilon)
 }
 
 fn initialize(all_lines: &mut std::io::Lines<BufReader<File>>) -> Vec<u32> {
