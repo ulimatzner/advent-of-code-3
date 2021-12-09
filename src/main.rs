@@ -38,9 +38,8 @@ fn run(path: &Path) -> i32 {
             continue;
         }
         panic!("Can't have as many ones as zeros. Ones: {}, Zeros: {}",ones, zeros);
-    } 
+    }
     
-//    let gamma = gamma_as_string.parse::<u32>().unwrap();
     let gamma = u32::from_str_radix(gamma_as_string.as_str(), 2).unwrap();
 
     let base: u32 = 2;
